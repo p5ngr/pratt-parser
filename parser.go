@@ -1,7 +1,5 @@
 package pratt
 
-import "strings"
-
 type Expr interface {
 	String() string
 }
@@ -103,13 +101,41 @@ func (p *Parser) parseExpr(floor int) Expr {
 	}
 	return left
 }
+func tokenize(data string) []string {
+	var tokens []string
+	i := 0
+	for i < len(data) {
+		switch {
+		case data[i] == ' ':
+			i++
+		case data[i] >= '0' && data[i] <= '9':
+			// we will consume consecutive digits into a token
+			tok := ""
+			for ; i < len(data) && data[i] >= '0' && data[i] <= '9'; i++ {
+				tok += string(data[i])
+			}
+			tokens = append(tokens, tok)
+		default:
+			// if  there are single character tokens like '+','-', '*', '/'
+			tokens = append(tokens, string(data[i]))
+			i++
+		}
+	}
+	return tokens
+}
 func Parse(data string) Expr {
 	// list := strings.Split(data, " ")
 	// if len(list) == 1 {
 	// 	return Literal{Value: list[0]}
 	// }
 	// return Binary{Left: Literal{Value: list[0]}, Right: Literal{Value: list[2]}, Op: list[1]}
-	tokens := strings.Split(data, " ")
+	// naive way by getting tokens by splitting on spaces
+	// tokens := strings.Split(data, " ")
+	// p := &Parser{tokens: tokens, pos: 0}
+	// return p.parseExpr(0)
+
+	// we will now introduce the tokenizer which does not necessarily split on spaces
+	tokens := tokenize(data)
 	p := &Parser{tokens: tokens, pos: 0}
 	return p.parseExpr(0)
 }

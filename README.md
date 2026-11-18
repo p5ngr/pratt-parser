@@ -20,8 +20,16 @@ expr := pratt.Parse("1 + 2 * 3")
 fmt.Println(expr.String()) // (+ 1 (* 2 3))
 ```
 
-### Known limitation
+### Changelog
 
-The tokenizer splits on whitespace only, so every token needs a
-surrounding space (`"( 1 + 2 ) * 3"`, not `"(1+2)*3"`). A real
-tokenizer (multi-digit numbers, no-space input) is next.
+- Real tokenizer — handles multi-digit numbers and operators with no
+  surrounding whitespace required (`"1+2*3"` now parses the same as
+  `"1 + 2 * 3"`)
+- Postfix operator (`!`)
+- Prefix operator (`-`), including recursing into grouped/nested
+  operands
+- Grouping with parentheses
+- Right-associativity (`^`)
+- Left-associativity
+- Binary operators with precedence (`+` `-` `*` `/`)
+- Literal values

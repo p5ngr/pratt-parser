@@ -94,3 +94,27 @@ func TestParseEverything(t *testing.T) {
 		t.Errorf("Parse(%q) = %q, want %q", "( 1 + 2 ) * 3 ^ 2 ! + - 4", got.String(), want)
 	}
 }
+
+// tokenizer test 1
+func TestParseNoSpaces(t *testing.T) {
+	got := Parse("1+2")
+	want := "(+ 1 2)"
+	if got.String() != want {
+		t.Errorf("Parse(%q) = %q, want %q", "1+2", got.String(), want)
+	}
+}
+
+func TestParseNoSpacesMultiDigit(t *testing.T) {
+	got := Parse("12+34*2")
+	want := "(+ 12 (* 34 2))"
+	if got.String() != want {
+		t.Errorf("Parse(%q) = %q, want %q", "12+34*2", got.String(), want)
+	}
+}
+func TestParseEverythingNoSpaces(t *testing.T) {
+	got := Parse("(1+2)*3^2!+-4")
+	want := "(+ (* (+ 1 2) (^ 3 (! 2))) (-4))"
+	if got.String() != want {
+		t.Errorf("Parse(%q) = %q, want %q", "(1+2)*3^2!+-4", got.String(), want)
+	}
+}
