@@ -3,7 +3,8 @@ Yet another pratt parser!
 
 Built test-first, in Go. Supports binary operators with precedence
 (`+` `-` `*` `/` `^`), left- and right-associativity, grouping with
-parentheses, prefix `-`, and postfix `!`.
+parentheses, prefix `-`/`+`, and postfix `!`. Parses to an AST and can
+evaluate it to an actual value.
 
 ### Running tests
 
@@ -18,10 +19,17 @@ Add `-v` for per-test output.
 ```go
 expr := pratt.Parse("1 + 2 * 3")
 fmt.Println(expr.String()) // (+ 1 (* 2 3))
+
+result, err := expr.Eval()
+fmt.Println(result) // 7
 ```
 
 ### Changelog
 
+- `Eval()` — walks the parsed tree (postorder: children resolve before
+  the parent computes anything) and returns an actual value, with real
+  errors instead of panics for division by zero and invalid literals
+- Prefix operator (`+`), in addition to `-`
 - Real tokenizer — handles multi-digit numbers and operators with no
   surrounding whitespace required (`"1+2*3"` now parses the same as
   `"1 + 2 * 3"`)
