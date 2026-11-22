@@ -1,7 +1,14 @@
 package pratt
 
+import (
+	"fmt"
+	"math"
+	"strconv"
+)
+
 type Expr interface {
 	String() string
+	Eval() (int, error)
 }
 type Literal struct {
 	Value string
@@ -9,6 +16,14 @@ type Literal struct {
 
 func (l Literal) String() string {
 	return l.Value
+}
+
+func (l Literal) Eval() (int, error) {
+	numInt, err := strconv.Atoi(l.Value)
+	if err != nil {
+		return 0, fmt.Errorf("invalid Literal  %q: %w", l.Value, err)
+	}
+	return numInt, nil
 }
 
 type Binary struct {
@@ -21,6 +36,37 @@ func (b Binary) String() string {
 	return "(" + b.Op + " " + b.Left.String() + " " + b.Right.String() + ")"
 }
 
+func (b Binary) Eval() (int, error) {
+	// usual case(considering we get a regular node)
+	// we will do postorder travsersal here. first we travser the left subtree
+	Left, err := b.Left.Eval()
+	if err != nil {
+		return 0, fmt.Errorf("invalid Binary left %q: %w", b.Left.String(), err)
+	}
+	// then we do the right subtree
+	Right, err := b.Right.Eval()
+	if err != nil {
+		return 0, fmt.Errorf("invalid Binary right %q: %w", b.Right.String(), err)
+	}
+	// base case where we actually do the operations based on operators
+	switch b.Op {
+	case "+":
+		return Left + Right, nil
+	case "-":
+		return Left - Right, nil
+	case "*":
+		return Left * Right, nil
+	case "/":
+		if Right == 0 {
+			return 0, fmt.Errorf("division by zero: %s", b.String())
+		}
+		return Left / Right, nil
+	case "^":
+		return int(math.Pow(float64(Left), float64(Right))), nil
+	}
+	return 0, fmt.Errorf("unknown operator %q", b.Op)
+}
+
 type Unary struct {
 	Op    string
 	Right Expr
@@ -28,6 +74,20 @@ type Unary struct {
 
 func (u Unary) String() string {
 	return "(" + u.Op + u.Right.String() + ")"
+}
+func (u Unary) Eval() (int, error) {
+	// yeah, let's say if we want to recursively chain something like "------------5"
+	Right, err := u.Right.Eval()
+	if err != nil {
+		return 0, fmt.Errorf("invalid Unary right %q: %w", u.Right.String(), err)
+	}
+	switch u.Op {
+	case "+":
+		return Right, nil
+	case "-":
+		return (0 - Right), nil
+	}
+	return 0, nil
 }
 
 type Postfix struct {
@@ -37,6 +97,31 @@ type Postfix struct {
 
 func (p Postfix) String() string {
 	return "(" + p.Op + " " + p.Left.String() + ")"
+}
+
+func (p Postfix) Eval() (int, error) {
+	// yup, recursively parsing again!
+	Left, err := p.Left.Eval()
+	if err != nil {
+		return 0, fmt.Errorf("invalid Unary right %q: %w", p.Left.String(), err)
+	}
+	switch p.Op {
+	case "!":
+		if Left < 0 {
+			return 0, fmt.Errorf("factorial of negative number: %d", Left)
+		}
+		numLeft := factorial(Left)
+		return numLeft, nil
+	}
+	return 0, nil
+}
+
+func factorial(n int) int {
+	var result int = 1
+	for i := n; i > 1; i-- {
+		result *= i
+	}
+	return result
 }
 
 type Parser struct {
@@ -80,6 +165,9 @@ func (p *Parser) parseExpr(floor int) Expr {
 		// for now we will consider only "-"
 		// left = Unary{Op: tok, Right: Literal{Value: p.advance()}}
 		// we choose 7 since we want it to be highrt than the leftBP of ops which we do not want to consume
+		left = Unary{Op: tok, Right: p.parseExpr(7)}
+	} else if tok == "+" {
+		// experimental shi with unary +. just saw an unary + in ruslan's blog lol
 		left = Unary{Op: tok, Right: p.parseExpr(7)}
 	} else {
 		left = Literal{Value: tok}

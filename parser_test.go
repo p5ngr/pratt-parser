@@ -1,6 +1,8 @@
 package pratt
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestParseLiteral(t *testing.T) {
 	got := Parse("42")
@@ -111,10 +113,104 @@ func TestParseNoSpacesMultiDigit(t *testing.T) {
 		t.Errorf("Parse(%q) = %q, want %q", "12+34*2", got.String(), want)
 	}
 }
+
 func TestParseEverythingNoSpaces(t *testing.T) {
 	got := Parse("(1+2)*3^2!+-4")
 	want := "(+ (* (+ 1 2) (^ 3 (! 2))) (-4))"
 	if got.String() != want {
 		t.Errorf("Parse(%q) = %q, want %q", "(1+2)*3^2!+-4", got.String(), want)
+	}
+}
+
+func TestEvalLiteral(t *testing.T) {
+	got, err := Parse("42").Eval()
+	if err != nil {
+		t.Fatalf("Parse(%q).Eval() returned error: %v", "42", err)
+	}
+	want := 42
+	if got != want {
+		t.Errorf("Parse(%q).Eval() = %d, want %d", "42", got, want)
+	}
+}
+func TestEvalBinary(t *testing.T) {
+	got, err := Parse("1 + 2").Eval()
+	if err != nil {
+		t.Fatalf("Parse(%q).Eval() returned error: %v", "1 + 2", err)
+	}
+	want := 3
+	if got != want {
+		t.Errorf("Parse(%q).Eval() = %d, want %d", "1 + 2", got, want)
+	}
+}
+
+func TestEvalPower(t *testing.T) {
+	got, err := Parse("2 ^ 3").Eval()
+	if err != nil {
+		t.Fatalf("Parse(%q).Eval() returned error: %v", "2 ^ 3", err)
+	}
+	want := 8
+	if got != want {
+		t.Errorf("Parse(%q).Eval() = %d, want %d", "2 ^ 3", got, want)
+	}
+}
+
+func TestEvalDivision(t *testing.T) {
+	got, err := Parse("6 / 2").Eval()
+	if err != nil {
+		t.Fatalf("Parse(%q).Eval() returned error: %v", "6 / 2", err)
+	}
+	want := 3
+	if got != want {
+		t.Errorf("Parse(%q).Eval() = %d, want %d", "6 / 2", got, want)
+	}
+}
+
+func TestEvalDivisionByZero(t *testing.T) {
+	_, err := Parse("1 / 0").Eval()
+	if err == nil {
+		t.Fatalf("Parse(%q).Eval() = nil error, want a division-by-zero error", "1 / 0")
+	}
+}
+
+func TestEvalUnary(t *testing.T) {
+	got, err := Parse("- 5").Eval()
+	if err != nil {
+		t.Fatalf("Parse(%q).Eval() returned error: %v", "- 5", err)
+	}
+	want := -5
+	if got != want {
+		t.Errorf("Parse(%q).Eval() = %d, want %d", "- 5", got, want)
+	}
+}
+func TestEvalUnaryPlus(t *testing.T) {
+	got, err := Parse("+ 5").Eval()
+	if err != nil {
+		t.Fatalf("Parse(%q).Eval() returned error: %v", "+ 5", err)
+	}
+	want := 5
+	if got != want {
+		t.Errorf("Parse(%q).Eval() = %d, want %d", "+ 5", got, want)
+	}
+}
+func TestEvalPostfix(t *testing.T) {
+	got, err := Parse("5 !").Eval()
+	if err != nil {
+		t.Fatalf("Parse(%q).Eval() returned error: %v", "5 !", err)
+	}
+	want := 120
+	if got != want {
+		t.Errorf("Parse(%q).Eval() = %d, want %d", "5 !", got, want)
+	}
+}
+
+func TestEvalEverything(t *testing.T) {
+	got, err := Parse("( 1 + 2 ) * 3 ^ 2 ! + - 4").Eval()
+	if err != nil {
+		t.Fatalf("Eval() returned error: %v", err)
+	}
+	// (1+2)=3, 2!=2, 3^2=9, 3*9=27, -4, 27 + (-4) = 23
+	want := 23
+	if got != want {
+		t.Errorf("got %d, want %d", got, want)
 	}
 }
